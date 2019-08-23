@@ -1,0 +1,74 @@
+<?xml version="1.0"?>
+<robot name="something" xmlns:xacro="http://www.ros.org/wiki/xacro" >
+<xacro:macro name="cube" params="name x y z xyz rpy mass" >
+    <link name="${name}">
+        <visual>
+            <geometry>
+                <box size="${x} ${y} ${z}"/>
+            </geometry>
+            <origin rpy="${rpy}" xyz="${xyz}"/>
+        </visual>
+        <collision>
+            <geometry>
+                <box size="${x} ${y} ${z}"/>
+            </geometry>
+            <origin rpy="${rpy}" xyz="${xyz}"/>
+        </collision>
+        <inertial>
+            <mass value="${mass}" />
+                <inertia ixx="${mass/12*(y*y+z*z)}"
+                iyy="${mass/12*(x*x+z*z)}"
+                izz="${mass/12*(y*y+x*x)}" 
+                ixy="0.0" ixz="0.0" iyz="0.0"/>
+            <origin xyz="0 0 ${z/2}"/>
+        </inertial>
+    </link>
+</xacro:macro>
+<xacro:cube name="base_link" x="0.6" y="0.6" z="0.3" xyz="0 0 -0.15" rpy="0 0 0" mass="1"/>
+
+<xacro:cube name="fixedArm" x="0.05" y="0.05" z="0.7" xyz="0 0 0.35" rpy="0 0 0" mass="1"/>
+<xacro:cube name="firstArm" x="0.05" y="0.05" z="0.4" xyz="0 0 0.1" rpy="0 0 0" mass="1"/>
+<xacro:cube name="secondArm" x="0.05" y="0.05" z="0.4" xyz="0 0 0.1" rpy="0 0 0" mass="1"/>
+  <link name="world"/>
+
+  <joint name="fixed" type="fixed">
+    <parent link="world"/>
+    <child link="base_link"/>
+  </joint>
+
+<joint name="fixed_to_base" type="fixed">
+    <parent link="base_link"/>
+    <child link="fixedArm"/>
+</joint>
+<joint name="first_to_fixed" type="continuous">
+    <parent link="fixedArm"/>
+    <child link="firstArm"/>
+    <origin xyz="0 0.05 0.6"/>
+    <axis xyz="0 1 0"/>
+        <dynamics damping="0.7"/>
+
+</joint>
+
+<joint name="second_to_first" type="continuous">
+    <parent link="firstArm"/>
+    <child link="secondArm"/>
+    <origin xyz="0 0.05 0.2"/>
+    <axis xyz="0 1 0"/>
+        <dynamics damping="0.7"/>
+
+</joint>
+
+  <gazebo reference="base_link">
+    <material>Gazebo/White</material>
+  </gazebo>
+  <gazebo reference="fixedArm">
+    <material>Gazebo/Black</material>
+  </gazebo>
+    <gazebo reference="firstArm">
+    <material>Gazebo/White</material>
+  </gazebo>
+    <gazebo reference="secondArm">
+    <material>Gazebo/Black</material>
+  </gazebo>
+
+</robot>

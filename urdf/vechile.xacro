@@ -1,0 +1,250 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="vechile">
+<xacro:property name="body_x" value="0.2" />
+<xacro:property name="body_y" value="0.1" />
+<xacro:property name="body_z" value="0.05" />
+<xacro:property name="wheel_r" value="0.025" />
+<xacro:property name="wheel_l" value="0.025" />
+<xacro:property name="body_mass" value="0.5" />
+<xacro:property name="wheel_mass" value="0.05" />
+<xacro:property name="pi" value="3.1415926"/>
+<xacro:property name="camera_a" value="0.05"/>
+<xacro:property name="camera_mass" value="0.05" />
+<xacro:property name="camera_name" value="camera" />
+
+<material name="black">
+    <color rgba="0 0 0 1"/>
+</material>
+
+<material name="white">
+    <color rgba="1 1 1 1"/>
+</material>
+<link name="base_link">
+    <visual>
+        <geometry>
+            <box size="${body_x} ${body_y} ${body_z}"/>
+        </geometry>
+        <material name="white"/>
+        <origin xyz="0 0 ${body_z/2}"/>
+    </visual>
+    <collision>
+        <geometry>
+            <box size="${body_x} ${body_y} ${body_z}"/>
+        </geometry>
+        <origin xyz="0 0 ${body_z/2}"/>
+    </collision>
+    <inertial>
+        <mass value="${body_mass}" />
+        <inertia ixx="${body_mass/12*(body_y*body_y+body_z*body_z)}"
+        iyy="${body_mass/12*(body_x*body_x+body_z*body_z)}"
+        izz="${body_mass/12*(body_y*body_y+body_x*body_x)}" 
+        ixy="0.0" ixz="0.0" iyz="0.0"/>
+    </inertial>
+</link>
+<xacro:macro name="wheel" params="prefix">
+    <link name="${prefix}_wheel">
+        <visual>
+            <geometry>
+                <cylinder length="${wheel_l}" radius="${wheel_r}"/>
+            </geometry>
+            <material name="black"/>
+            <origin xyz="0 0 0" rpy="${pi/2} 0 0" />
+        </visual>
+        <collision>
+            <geometry>
+                <cylinder length="${wheel_l}" radius="${wheel_r}"/>
+            </geometry>
+            <origin xyz="0 0 0" rpy="${pi/2} 0 0" />
+        </collision>
+        <inertial>
+            <mass value="${wheel_mass}" />
+            <inertia ixx="${wheel_mass/12*(3*wheel_r*wheel_r+wheel_l*wheel_l)}" 
+            iyy="${wheel_mass/12*(3*wheel_r*wheel_r+wheel_l*wheel_l)}"
+            izz="${wheel_mass/2*(wheel_r*wheel_r)}" 
+            ixy="0.0" ixz="0.0" iyz="0.0"/>
+        </inertial>
+    </link>
+    <transmission name="${prefix}_wheel_trans">
+        <type>transmission_interface/SimpleTransmission</type>
+        <actuator name="${prefix}_wheel_motor">
+            <mechanicalReduction>1</mechanicalReduction>
+        </actuator>
+        <joint name="${prefix}_wheel_to_base">
+            <hardwareInterface>VelocityJointInterface</hardwareInterface>
+        </joint>
+    </transmission>
+    <gazebo reference="${prefix}_wheel">
+      <mu1 value="200.0"/>
+      <mu2 value="100.0"/>
+      <kp value="10000000.0" />
+      <kd value="1.0" />
+      <material>Gazebo/Grey</material>
+    </gazebo>
+
+
+</xacro:macro>
+
+<xacro:wheel prefix="left_front" />
+<xacro:wheel prefix="left_rear" />
+<xacro:wheel prefix="right_front" />
+<xacro:wheel prefix="right_rear" />
+
+<joint name="left_front_wheel_to_base" type="continuous">
+    <parent link="base_link"/>
+    <child link="left_front_wheel"/>
+    <origin xyz="${body_x/4} ${body_y/2+wheel_l/2} 0" />
+    <axis xyz="0 1 0"/>
+</joint>
+<joint name="left_rear_wheel_to_base" type="continuous">
+    <parent link="base_link"/>
+    <child link="left_rear_wheel"/>
+    <origin xyz="${-body_x/4} ${body_y/2+wheel_l/2} 0"/>
+    <axis xyz="0 1 0"/>
+</joint>
+<joint name="right_front_wheel_to_base" type="continuous">
+    <parent link="base_link"/>
+    <child link="right_front_wheel"/>
+    <origin xyz="${body_x/4} ${-body_y/2-wheel_l/2} 0"/>
+    <axis xyz="0 1 0"/>
+</joint>
+<joint name="right_rear_wheel_to_base" type="continuous">
+    <parent link="base_link"/>
+    <child link="right_rear_wheel"/>
+    <origin xyz="${-body_x/4} ${-body_y/2-wheel_l/2} 0"/>
+    <axis xyz="0 1 0"/>
+</joint>
+<link name="camera">
+    <visual>
+        <geometry>
+            <box size="${camera_a} ${camera_a} ${camera_a}"/>
+        </geometry>
+        <material name="black"/>
+        <origin xyz="0 0 ${camera_a/2}"/>
+    </visual>
+    <collision>
+        <geometry>
+            <box size="${camera_a} ${camera_a} ${camera_a}"/>
+        </geometry>
+        <origin xyz="0 0 ${camera_a/2}"/>
+    </collision>
+    <inertial>
+        <mass value="${camera_mass}" />
+        <inertia 
+        ixx="${camera_mass/12*(camera_a*camera_a+camera_a*camera_a)}"
+        iyy="${camera_mass/12*(camera_a*camera_a+camera_a*camera_a)}"
+        izz="${camera_mass/12*(camera_a*camera_a+camera_a*camera_a)}" 
+        ixy="0.0" ixz="0.0" iyz="0.0"/>
+    </inertial>
+</link>
+<joint name="camera_base" type="fixed">
+    <parent link="base_link"/>
+    <child link="camera"/>
+    <origin xyz="${body_x/4} 0 ${body_z}"/>
+</joint>    
+    <gazebo reference="camera">
+      <material>Gazebo/Grey</material>
+    </gazebo>
+
+  
+
+<!--gazebo>
+  <plugin name="differential_drive_controller" filename="libgazebo_ros_diff_drive.so">
+    <alwaysOn>true</alwaysOn>
+    <updateRate>30</updateRate>
+    <leftJoint>left_rear_wheel_to_base</leftJoint>
+    <rightJoint>right_rear_wheel_to_base</rightJoint>
+    <wheelSeparation>0.5380</wheelSeparation>
+    <wheelDiameter>0.2410</wheelDiameter>
+    <torque>20</torque>
+    <commandTopic>cmd_vel</commandTopic>
+    <odometryTopic>odom</odometryTopic>
+    <odometryFrame>odom</odometryFrame>
+    <robotBaseFrame>base_footprint</robotBaseFrame>
+  </plugin>
+
+</gazebo-->
+    <!--gazebo>
+        <plugin name="differential_drive_controller" 
+                    filename="libgazebo_ros_diff_drive.so">
+                <rosDebugLevel>Debug</rosDebugLevel>
+                <publishWheelTF>true</publishWheelTF>
+                <robotNamespace>/</robotNamespace>
+                <publishTf>1</publishTf>
+                <publishWheelJointState>true</publishWheelJointState>
+                <alwaysOn>true</alwaysOn>
+                <updateRate>100.0</updateRate>
+                <legacyMode>true</legacyMode>
+                <leftJoint>left_rear_wheel_to_base</leftJoint>
+                <rightJoint>right_rear_wheel_to_base</rightJoint>
+
+                <wheelSeparation>${body_y+wheel_l}</wheelSeparation>
+                <wheelDiameter>${2*wheel_r}</wheelDiameter>
+                <broadcastTF>1</broadcastTF>
+                <wheelTorque>30</wheelTorque>
+                <wheelAcceleration>1.8</wheelAcceleration>
+                <commandTopic>cmd_vel</commandTopic>
+                <odometryFrame>odom</odometryFrame> 
+                <odometryTopic>odom</odometryTopic> 
+                <robotBaseFrame>base_link</robotBaseFrame>
+    </plugin>
+</gazebo--> 
+
+<gazebo>
+  <plugin name="skid_steer_drive_controller" filename="libgazebo_ros_skid_steer_drive.so">
+    <updateRate>100.0</updateRate>
+    <robotNamespace>/</robotNamespace>
+    <leftFrontJoint>left_front_wheel_to_base</leftFrontJoint>
+    <rightFrontJoint>right_front_wheel_to_base</rightFrontJoint>
+    <leftRearJoint>left_rear_wheel_to_base</leftRearJoint>
+    <rightRearJoint>right_rear_wheel_to_base</rightRearJoint>
+    <wheelSeparation>${body_y+wheel_l}</wheelSeparation>
+    <wheelDiameter>${2*wheel_r}</wheelDiameter>
+    <robotBaseFrame>base_link</robotBaseFrame>
+    <torque>20</torque>
+    <topicName>cmd_vel</topicName>
+    <broadcastTF>false</broadcastTF>
+  </plugin>
+</gazebo>
+
+<gazebo reference="camera">
+  <sensor name="camera" type="depth">
+    <update_rate>20</update_rate>
+    <camera>
+      <horizontal_fov>1.047198</horizontal_fov>
+      <image>
+        <width>640</width>
+        <height>480</height>
+        <format>R8G8B8</format>
+      </image>
+      <clip>
+        <near>0.05</near>
+        <far>100.0</far>
+      </clip>
+    </camera>
+    <plugin name="$camera_controller" filename="libgazebo_ros_openni_kinect.so">
+      <baseline>0.2</baseline>
+      <alwaysOn>true</alwaysOn>
+      <updateRate>0.0   </updateRate>
+      <cameraName>${camera_name}_ir</cameraName>
+      <imageTopicName>/${camera_name}/rgb/image_raw</imageTopicName>
+      <cameraInfoTopicName>/${camera_name}/rgb/camera_info</cameraInfoTopicName>
+      <depthImageTopicName>/${camera_name}/depth_registered/image_raw</depthImageTopicName>
+      <depthImageCameraInfoTopicName>/${camera_name}/depth_registered/camera_info</depthImageCameraInfoTopicName>
+      <pointCloudTopicName>/${camera_name}/depth/points</pointCloudTopicName>
+      <frameName>camera_f</frameName>
+      <pointCloudCutoff>0.5</pointCloudCutoff>
+      <pointCloudCutoffMax>100.0</pointCloudCutoffMax>
+      <distortionK1>0.00000001</distortionK1>
+      <distortionK2>0.00000001</distortionK2>
+      <distortionK3>0.00000001</distortionK3>
+      <distortionT1>0.00000001</distortionT1>
+      <distortionT2>0.00000001</distortionT2>
+      <CxPrime>0</CxPrime>
+      <Cx>0</Cx>
+      <Cy>0</Cy>
+      <focalLength>0</focalLength>
+      <hackBaseline>0</hackBaseline>
+    </plugin>
+  </sensor>
+</gazebo>
+</robot>
